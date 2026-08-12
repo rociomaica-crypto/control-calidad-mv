@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Control de Calidad Digital — MV</title>
-<meta name="theme-color" content="#0F172A">
+<meta name="theme-color" content="#074592">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
   :root{
-    --navy:#0F172A; --steel:#334155; --teal:#0D9488; --rose:#E11D48; --amber:#D97706;
+    --navy:#074592; --steel:#0B5CB8; --teal:#009541; --rose:#E11D48; --amber:#009541;
     --bg:#F8FAFC; --card:#FFFFFF; --border:#E2E8F0; --text:#1E293B; --muted:#64748B;
   }
   *{box-sizing:border-box;}
@@ -78,9 +78,12 @@
 <body>
 <header>
   <div class="headrow">
-    <div>
-      <div class="eyebrow">Metalúrgica Vera · SGC</div>
-      <h1>Control de Calidad Digital</h1>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <img src="logo-mv.png" alt="Metalúrgica Vera" style="height:34px;width:auto;background:#fff;border-radius:6px;padding:4px 8px;">
+      <div>
+        <div class="eyebrow">Metalúrgica Vera · SGC</div>
+        <h1>Control de Calidad Digital</h1>
+      </div>
     </div>
   </div>
   <div class="tabs">
@@ -282,7 +285,7 @@
 <script>
 /* ======= CONFIGURACIÓN ======= */
 /* Reemplazar por la URL de implementación del Apps Script (termina en /exec) */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxe6Gv9Fi94E03VBBfLqo9GvnmIk4A8tkAtBasan00ekLaNjaEcnY06H7qV4STuT_ng/exec";
+const APPS_SCRIPT_URL = "PEGAR_AQUI_LA_URL_DEL_WEB_APP";
 
 /* ======= Utilidades ======= */
 function todayISO(){ return new Date().toISOString().slice(0,10); }
