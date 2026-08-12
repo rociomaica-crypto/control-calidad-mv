@@ -108,7 +108,7 @@
       </div>
       <div class="row">
         <div><label>Fecha</label><input type="date" name="fecha" required></div>
-        <div class="autocomplete-wrap"><label>OT N°</label><input class="mono" name="ot" id="ot051" required autocomplete="off"><div id="otPiezasList" class="autocomplete-list" style="display:none;"></div></div>
+        <div><label>OT N°</label><input class="mono" name="ot" id="ot051" required autocomplete="off"></div>
         <div><label>Obra</label><input name="obra"></div>
         <div><label>Sector</label>
           <select name="sector">
@@ -384,6 +384,7 @@ function addPiezaRow(prefill){
     <button type="button" class="rm">×</button>`;
   row.querySelector('.rm').addEventListener('click', () => row.remove());
   piezasTableEl.appendChild(row);
+  wirePiezaAutocomplete(row);
 }
 document.getElementById('btnAddPieza').addEventListener('click', () => addPiezaRow());
 addPiezaRow(); // arranca con una fila
@@ -399,36 +400,65 @@ function getPiezas(){
   })).filter(p => p.pieza);
 }
 
-/* ======= Autocompletado de piezas por OT ======= */
+/* ======= Autocompletado de Obra + piezas por OT ======= */
 const ot051 = document.getElementById('ot051');
-const otPiezasList = document.getElementById('otPiezasList');
+const obraInput051 = document.querySelector('#form051 input[name=obra]');
 let otDebounce = null;
 ot051.addEventListener('input', () => {
   clearTimeout(otDebounce);
   const ot = ot051.value.trim();
-  if (!ot) { otPiezasList.style.display = 'none'; return; }
+  if (!ot) return;
   otDebounce = setTimeout(async () => {
     try {
-      const r = await fetch(APPS_SCRIPT_URL + '?action=piezas_por_ot&ot=' + encodeURIComponent(ot)).then(x => x.json());
-      const piezas = (r.piezas || []);
-      if (!piezas.length) { otPiezasList.style.display = 'none'; return; }
-      otPiezasList.innerHTML = piezas.map(p => `<div class="autocomplete-item" data-pieza="${p}">${p}</div>`).join('');
-      otPiezasList.style.display = 'block';
-    } catch(e) { otPiezasList.style.display = 'none'; }
-  }, 350);
+      const r = await fetch(APPS_SCRIPT_URL + '?action=obra_por_ot&ot=' + encodeURIComponent(ot)).then(x => x.json());
+      if (r.obra) obraInput051.value = r.obra;
+    } catch(e) { /* sin conexión momentánea, no bloquea el resto del formulario */ }
+  }, 400);
 });
-otPiezasList.addEventListener('click', (e) => {
-  const item = e.target.closest('.autocomplete-item');
-  if (!item) return;
-  const pieza = item.dataset.pieza;
-  const emptyRow = Array.from(piezasTableEl.querySelectorAll('.piezarow')).find(r => !r.querySelector('.pz-codigo').value);
-  if (emptyRow) emptyRow.querySelector('.pz-codigo').value = pieza;
-  else addPiezaRow(pieza);
-  otPiezasList.style.display = 'none';
-});
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.autocomplete-wrap')) otPiezasList.style.display = 'none';
-});
+
+/* Autocompletado de piezas, por fila de la tabla — acotado a 30 resultados, filtrado por lo que se tipea */
+async function buscarPiezas(ot, q){
+  if (!ot) return [];
+  try {
+    const r = await fetch(APPS_SCRIPT_URL + '?action=piezas_por_ot&ot=' + encodeURIComponent(ot) + '&q=' + encodeURIComponent(q)).then(x => x.json());
+    return r.piezas || [];
+  } catch(e){ return []; }
+}
+
+function wirePiezaAutocomplete(row){
+  const codigoInput = row.querySelector('.pz-codigo');
+  const wrap = document.createElement('div');
+  wrap.className = 'autocomplete-list';
+  wrap.style.display = 'none';
+  codigoInput.parentElement === row ? row.style.position = 'relative' : null;
+  codigoInput.style.position = 'relative';
+  row.appendChild(wrap);
+  let deb = null;
+  codigoInput.addEventListener('input', () => {
+    clearTimeout(deb);
+    const ot = ot051.value.trim();
+    const q = codigoInput.value.trim();
+    if (!ot || q.length < 1) { wrap.style.display = 'none'; return; }
+    deb = setTimeout(async () => {
+      const piezas = await buscarPiezas(ot, q);
+      if (!piezas.length) { wrap.style.display = 'none'; return; }
+      const rect = codigoInput.getBoundingClientRect();
+      wrap.style.cssText = `display:block;position:fixed;top:${rect.bottom}px;left:${rect.left}px;width:${Math.max(rect.width,200)}px;`;
+      wrap.innerHTML = piezas.map(p => `<div class="autocomplete-item" data-pieza="${p.pieza}" data-eps="${p.eps||''}" data-tipo="${p.tipoEstructura||''}">${p.pieza}${p.eps?(' · EPS '+p.eps):''}</div>`).join('');
+    }, 300);
+  });
+  wrap.addEventListener('click', (e) => {
+    const item = e.target.closest('.autocomplete-item');
+    if (!item) return;
+    codigoInput.value = item.dataset.pieza;
+    if (item.dataset.eps) row.querySelector('.pz-eps').value = item.dataset.eps;
+    if (item.dataset.tipo) row.querySelector('.pz-tipo').value = item.dataset.tipo;
+    wrap.style.display = 'none';
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target !== codigoInput && !wrap.contains(e.target)) wrap.style.display = 'none';
+  });
+}
 
 
 let timerInterval=null, startedAt=null;
