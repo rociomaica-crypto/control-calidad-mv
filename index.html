@@ -62,6 +62,16 @@
   .idbar{background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;font-size:12px;padding:10px 14px;border-radius:8px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
   .idbar input{width:auto;flex:1;min-width:120px;padding:6px 8px;font-size:12px;}
   .footer-note{font-size:11px;color:var(--muted);text-align:center;margin-top:20px;}
+  .chkitem{display:flex;align-items:center;gap:6px;font-weight:400;text-transform:none;font-size:13px;color:var(--text);}
+  .autocomplete-wrap{position:relative;}
+  .autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 6px 14px rgba(0,0,0,.08);}
+  .autocomplete-item{padding:8px 10px;font-size:13px;cursor:pointer;}
+  .autocomplete-item:hover{background:#F1F5F9;}
+  .piezarow{display:grid;grid-template-columns:1.2fr 0.6fr 0.6fr 1fr 0.8fr 1fr auto;gap:6px;align-items:center;margin-bottom:8px;}
+  .piezarow input{padding:7px 8px;font-size:12.5px;}
+  .piezarow .rm{background:var(--rose);color:#fff;border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;}
+  .piezarow-head{display:grid;grid-template-columns:1.2fr 0.6fr 0.6fr 1fr 0.8fr 1fr auto;gap:6px;font-size:9.5px;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+  @media (max-width:560px){ .piezarow, .piezarow-head{grid-template-columns:1fr;} }
   @media (max-width:420px){ .row{grid-template-columns:1fr;} .kpis{grid-template-columns:1fr 1fr;} }
 </style>
 </head>
@@ -95,7 +105,7 @@
       </div>
       <div class="row">
         <div><label>Fecha</label><input type="date" name="fecha" required></div>
-        <div><label>OT N°</label><input class="mono" name="ot" required></div>
+        <div class="autocomplete-wrap"><label>OT N°</label><input class="mono" name="ot" id="ot051" required autocomplete="off"><div id="otPiezasList" class="autocomplete-list" style="display:none;"></div></div>
         <div><label>Obra</label><input name="obra"></div>
         <div><label>Sector</label>
           <select name="sector">
@@ -103,18 +113,77 @@
             <option>Herrería</option><option>Maquinado</option><option>Otro</option>
           </select>
         </div>
-        <div><label>Pieza / Código</label><input class="mono" name="pieza" required></div>
-        <div><label>Soldador (estampa)</label><input class="mono" name="soldador"></div>
       </div>
+
+      <label>Norma de Referencia / Procedimiento</label>
+      <div class="chkrow" style="flex-wrap:wrap;margin-bottom:6px;">
+        <label class="chkitem"><input type="checkbox" name="norma" value="AWS D1.1" style="width:auto;"> AWS D1.1</label>
+        <label class="chkitem"><input type="checkbox" name="norma" value="PR-013" checked style="width:auto;"> PR-013</label>
+        <label class="chkitem"><input type="checkbox" name="norma" value="PR-014" style="width:auto;"> PR-014</label>
+        <label class="chkitem"><input type="checkbox" name="norma" value="Otro" style="width:auto;"> Otro</label>
+      </div>
+      <input class="mono" name="normaOtro" placeholder="Describir 'Otro', si aplica" style="margin-bottom:14px;">
+
+      <label>Condición superficial</label>
+      <div class="pillrow" style="margin-bottom:14px;" id="condicionPills">
+        <button type="button" class="pill on-ok" data-cond="Bruta">Bruta</button>
+        <button type="button" class="pill" data-cond="Granallada">Granallada</button>
+        <button type="button" class="pill" data-cond="Cepillada">Cepillada</button>
+        <button type="button" class="pill" data-cond="Esmerilada">Esmerilada</button>
+      </div>
+      <input type="hidden" name="condicionSuperficial" value="Bruta">
+
       <div class="row">
         <div>
           <label>Tipo de ensayo</label>
           <div class="chkrow">
-            <label style="display:flex;align-items:center;gap:6px;font-weight:400;text-transform:none;font-size:13px;"><input type="checkbox" name="vt" checked style="width:auto;"> VT</label>
-            <label style="display:flex;align-items:center;gap:6px;font-weight:400;text-transform:none;font-size:13px;"><input type="checkbox" name="pt" style="width:auto;"> PT</label>
+            <label class="chkitem"><input type="checkbox" name="vt" id="chkVT" checked style="width:auto;"> VT (Visual Dimensional)</label>
           </div>
         </div>
-        <div><label>Muestra (%)</label><input type="number" min="0" max="100" name="muestra"></div>
+        <div><label>Muestra VT (%)</label><input type="number" min="0" max="100" name="muestraVT"></div>
+        <div>
+          <label>&nbsp;</label>
+          <div class="chkrow">
+            <label class="chkitem"><input type="checkbox" name="pt" id="chkPT" style="width:auto;"> PT (Líquido Penetrante)</label>
+          </div>
+        </div>
+        <div><label>Muestra PT (%)</label><input type="number" min="0" max="100" name="muestraPT"></div>
+      </div>
+
+      <div id="checklistBox" class="timerbox">
+        <div class="timerhead"><span>Inspección — cumple</span></div>
+        <div id="checklistItems"></div>
+      </div>
+
+      <div id="ptBox" class="timerbox" style="display:none;">
+        <div class="timerhead"><span>Tipo de proceso — Líquido Penetrante</span></div>
+        <div class="chkrow" style="margin-bottom:10px;">
+          <label class="chkitem"><input type="radio" name="ptTipoProceso" value="Removible con solvente" checked style="width:auto;"> Removible con solvente</label>
+          <label class="chkitem"><input type="radio" name="ptTipoProceso" value="Lavable con agua" style="width:auto;"> Lavable con agua</label>
+        </div>
+        <div class="row" style="margin-bottom:10px;">
+          <div><label>Método (Penetrante)</label>
+            <select name="ptMetodo"><option>Visible</option><option>Fluorescente</option></select>
+          </div>
+          <div><label>Tiempo de penetración (min)</label><input type="number" min="0" name="ptTiempoPenetracion"></div>
+          <div><label>Marca / Tipo / Lote-Vto (Penetrante)</label><input name="ptMarcaTipoLote"></div>
+          <div><label>Método (Revelador)</label>
+            <select name="ptMetodoRevelador"><option>Húmedo Acuoso</option><option>Húmedo no Acuoso</option></select>
+          </div>
+          <div><label>Tiempo de revelado (min)</label><input type="number" min="0" name="ptTiempoRevelado"></div>
+          <div><label>Marca / Tipo / Lote-Vto (Revelador)</label><input name="ptMarcaTipoLoteRev"></div>
+        </div>
+        <label>Limpieza final</label>
+        <input name="ptLimpiezaFinal" style="margin-bottom:0;">
+      </div>
+
+      <label>Instrumentos de medición utilizados</label>
+      <input class="mono" name="instrumentos" placeholder="Ej. CM-04, ME-02" style="margin-bottom:14px;">
+
+      <div class="timerbox">
+        <div class="timerhead"><span>Piezas inspeccionadas</span></div>
+        <div id="piezasTable"></div>
+        <button type="button" class="btn btn-outline" id="btnAddPieza" style="margin-top:8px;width:100%;">+ Agregar pieza</button>
       </div>
 
       <div class="timerbox">
@@ -139,9 +208,16 @@
       <label>Observaciones</label>
       <textarea name="observaciones" rows="2" style="margin-bottom:14px;"></textarea>
 
+      <div class="row">
+        <div><label>Inspector</label><input name="inspectorField" id="inspectorField051" placeholder="(usa tu nombre de arriba)"></div>
+        <div><label>Jefe</label><input name="jefe"></div>
+        <div><label>Cliente</label><input name="cliente"></div>
+      </div>
+
       <button type="submit" class="btn btn-primary">Guardar inspección</button>
     </form>
   </section>
+
 
   <!-- FR-032 -->
   <section id="view-fr032" style="display:none;">
@@ -237,7 +313,121 @@ document.querySelectorAll('.tab').forEach(btn=>{
   });
 });
 
-/* ======= Timer FR-051 ======= */
+/* ======= Checklist de inspección (VT) ======= */
+const CHECKLIST_ITEMS = ['Tamaño de filete', 'Perfil de Soldadura', 'Sobremonta', 'Preparación de juntas', 'Otras Discontinuidades'];
+const checklistItemsEl = document.getElementById('checklistItems');
+CHECKLIST_ITEMS.forEach(item => {
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;border-bottom:1px solid #E2E8F0;';
+  row.innerHTML = `<span>${item}</span>
+    <span class="pillrow" style="margin:0;">
+      <button type="button" class="pill on-ok" data-item="${item}" data-val="Si">Sí</button>
+      <button type="button" class="pill" data-item="${item}" data-val="No">No</button>
+    </span>`;
+  checklistItemsEl.appendChild(row);
+});
+const checklistState = {};
+CHECKLIST_ITEMS.forEach(i => checklistState[i] = 'Si');
+checklistItemsEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-item]');
+  if (!btn) return;
+  const item = btn.dataset.item, val = btn.dataset.val;
+  checklistState[item] = val;
+  checklistItemsEl.querySelectorAll(`button[data-item="${item}"]`).forEach(b => b.classList.remove('on-ok', 'on-bad'));
+  btn.classList.add(val === 'Si' ? 'on-ok' : 'on-bad');
+});
+
+/* ======= Norma de referencia (chips múltiples) ======= */
+function getNormaSeleccionada(){
+  return Array.from(document.querySelectorAll('#form051 input[name=norma]:checked')).map(c => c.value).join(', ');
+}
+
+/* ======= Condición superficial (pill única) ======= */
+document.querySelectorAll('#condicionPills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#condicionPills .pill').forEach(x => x.classList.remove('on-ok'));
+    p.classList.add('on-ok');
+    document.querySelector('#form051 input[name=condicionSuperficial]').value = p.dataset.cond;
+  });
+});
+
+/* ======= Mostrar/ocultar bloque PT según checkbox ======= */
+const chkPT = document.getElementById('chkPT');
+const ptBox = document.getElementById('ptBox');
+chkPT.addEventListener('change', () => { ptBox.style.display = chkPT.checked ? 'block' : 'none'; });
+
+/* ======= Tabla de piezas (dinámica) ======= */
+const piezasTableEl = document.getElementById('piezasTable');
+let piezaRowCount = 0;
+
+function addPiezaRow(prefill){
+  piezaRowCount++;
+  const rid = 'p' + piezaRowCount;
+  if (piezasTableEl.children.length === 0) {
+    piezasTableEl.insertAdjacentHTML('beforeend', `<div class="piezarow-head">
+      <span>Pieza/Código</span><span>Rev.</span><span>Cant.</span><span>Soldador</span><span>EPS</span><span>Tipo estruc.</span><span></span>
+    </div>`);
+  }
+  const row = document.createElement('div');
+  row.className = 'piezarow';
+  row.dataset.rid = rid;
+  row.innerHTML = `
+    <input class="mono pz-codigo" placeholder="Pieza/Código" value="${prefill||''}">
+    <input class="pz-rev" placeholder="Rev.">
+    <input class="pz-cant" type="number" min="0" placeholder="Cant.">
+    <input class="mono pz-soldador" placeholder="Soldador">
+    <input class="pz-eps" placeholder="EPS">
+    <input class="pz-tipo" placeholder="Tipo A/B">
+    <button type="button" class="rm">×</button>`;
+  row.querySelector('.rm').addEventListener('click', () => row.remove());
+  piezasTableEl.appendChild(row);
+}
+document.getElementById('btnAddPieza').addEventListener('click', () => addPiezaRow());
+addPiezaRow(); // arranca con una fila
+
+function getPiezas(){
+  return Array.from(piezasTableEl.querySelectorAll('.piezarow')).map(row => ({
+    pieza: row.querySelector('.pz-codigo').value,
+    rev: row.querySelector('.pz-rev').value,
+    cant: row.querySelector('.pz-cant').value,
+    soldador: row.querySelector('.pz-soldador').value,
+    eps: row.querySelector('.pz-eps').value,
+    tipoEstructura: row.querySelector('.pz-tipo').value,
+  })).filter(p => p.pieza);
+}
+
+/* ======= Autocompletado de piezas por OT ======= */
+const ot051 = document.getElementById('ot051');
+const otPiezasList = document.getElementById('otPiezasList');
+let otDebounce = null;
+ot051.addEventListener('input', () => {
+  clearTimeout(otDebounce);
+  const ot = ot051.value.trim();
+  if (!ot) { otPiezasList.style.display = 'none'; return; }
+  otDebounce = setTimeout(async () => {
+    try {
+      const r = await fetch(APPS_SCRIPT_URL + '?action=piezas_por_ot&ot=' + encodeURIComponent(ot)).then(x => x.json());
+      const piezas = (r.piezas || []);
+      if (!piezas.length) { otPiezasList.style.display = 'none'; return; }
+      otPiezasList.innerHTML = piezas.map(p => `<div class="autocomplete-item" data-pieza="${p}">${p}</div>`).join('');
+      otPiezasList.style.display = 'block';
+    } catch(e) { otPiezasList.style.display = 'none'; }
+  }, 350);
+});
+otPiezasList.addEventListener('click', (e) => {
+  const item = e.target.closest('.autocomplete-item');
+  if (!item) return;
+  const pieza = item.dataset.pieza;
+  const emptyRow = Array.from(piezasTableEl.querySelectorAll('.piezarow')).find(r => !r.querySelector('.pz-codigo').value);
+  if (emptyRow) emptyRow.querySelector('.pz-codigo').value = pieza;
+  else addPiezaRow(pieza);
+  otPiezasList.style.display = 'none';
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.autocomplete-wrap')) otPiezasList.style.display = 'none';
+});
+
+
 let timerInterval=null, startedAt=null;
 document.getElementById('btnStart').addEventListener('click', ()=>{
   document.getElementById('horaInicio').value = nowHM();
@@ -284,19 +474,46 @@ document.getElementById('form051').addEventListener('submit', async (e)=>{
   const f = e.target;
   const inspector = inspectorInput.value.trim();
   if(!inspector){ showToast('Ingresá tu nombre arriba antes de guardar.'); return; }
+  const piezas = getPiezas();
+  if(!piezas.length){ showToast('Agregá al menos una pieza.'); return; }
   const data = {
     fecha: f.fecha.value, ot: f.ot.value, obra: f.obra.value, sector: f.sector.value,
-    pieza: f.pieza.value, soldador: f.soldador.value, tipoEstructura: '',
-    vt: f.vt.checked, pt: f.pt.checked, muestra: f.muestra.value,
+    normaReferencia: getNormaSeleccionada(), normaOtro: f.normaOtro.value,
+    condicionSuperficial: f.condicionSuperficial.value,
+    vt: f.vt.checked, muestraVT: f.muestraVT.value,
+    pt: f.pt.checked, muestraPT: f.muestraPT.value,
+    checklist: checklistState,
+    ptDetalle: f.pt.checked ? {
+      tipoProceso: f.ptTipoProceso.value, metodo: f.ptMetodo.value,
+      tiempoPenetracion: f.ptTiempoPenetracion.value, marcaTipoLote: f.ptMarcaTipoLote.value,
+      metodoRevelado: f.ptMetodoRevelador.value, tiempoRevelado: f.ptTiempoRevelado.value,
+      marcaTipoLoteRev: f.ptMarcaTipoLoteRev.value, limpiezaFinal: f.ptLimpiezaFinal.value
+    } : {},
+    instrumentos: f.instrumentos.value,
     horaInicio: f.horaInicio.value, horaFin: f.horaFin.value,
     duracionMin: minutesBetween(f.horaInicio.value, f.horaFin.value),
-    resultado: f.resultado.value, observaciones: f.observaciones.value, inspector
+    resultado: f.resultado.value, observaciones: f.observaciones.value,
+    piezas,
+    inspector: f.inspectorField.value.trim() || inspector,
+    jefe: f.jefe.value, cliente: f.cliente.value
   };
   const btn = f.querySelector('button[type=submit]');
   btn.disabled = true; btn.textContent = 'Guardando…';
   try{
     const r = await postAction({ action:'crear_fr051', usuario: inspector, data });
-    if(r.ok){ showToast('Inspección guardada — '+r.id); f.reset(); f.fecha.value = todayISO(); document.getElementById('elapsedDisplay').textContent=''; }
+    if(r.ok){
+      showToast('Inspección guardada — '+r.id);
+      f.reset(); f.fecha.value = todayISO();
+      document.getElementById('elapsedDisplay').textContent='';
+      piezasTableEl.innerHTML=''; piezaRowCount=0; addPiezaRow();
+      document.querySelectorAll('#form051 .pill').forEach(p=>p.classList.remove('on-ok','on-bad'));
+      document.querySelector('#form051 .pill[data-res=Aprobado]').classList.add('on-ok');
+      document.querySelector('#condicionPills .pill[data-cond=Bruta]').classList.add('on-ok');
+      CHECKLIST_ITEMS.forEach(i => checklistState[i]='Si');
+      checklistItemsEl.querySelectorAll('button[data-val=Si]').forEach(b=>b.classList.add('on-ok'));
+      checklistItemsEl.querySelectorAll('button[data-val=No]').forEach(b=>b.classList.remove('on-bad'));
+      ptBox.style.display='none';
+    }
     else showToast('Error: '+(r.error||'desconocido'));
   }catch(err){ showToast('No se pudo conectar con el servidor.'); }
   btn.disabled = false; btn.textContent = 'Guardar inspección';
@@ -415,9 +632,14 @@ function renderPanel(fr051, fr032){
   fr051.slice(0,8).forEach(r=>{
     const ok = r.Resultado==='Aprobado';
     const dur = (r.DuracionMin!==''&&r.DuracionMin!=null) ? r.DuracionMin+' min' : '';
+    let piezasLabel = '';
+    try {
+      const arr = JSON.parse(r.Piezas||'[]');
+      piezasLabel = arr.length ? (arr[0].pieza + (arr.length>1 ? ' +'+(arr.length-1) : '')) : '';
+    } catch(e){}
     l051.insertAdjacentHTML('beforeend', `
       <div class="item">
-        <div><span class="mono" style="font-weight:700;">${r.Pieza||''}</span>
+        <div><span class="mono" style="font-weight:700;">${piezasLabel}</span>
           <div class="sub"><span class="mono" style="color:#94A3B8;">${r.ID_Registro||''}${r.Revision>1?(' · Rev.'+r.Revision):''}</span> · OT ${r.OT||''} · ${r.Sector||''} · ${r.Fecha||''}</div></div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span class="mono" style="color:var(--muted);font-size:11px;">${dur}</span>
