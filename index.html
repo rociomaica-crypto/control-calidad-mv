@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Control de Calidad Digital — MV</title>
+<meta name="theme-color" content="#0F172A">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --navy:#0F172A; --steel:#334155; --teal:#0D9488; --rose:#E11D48; --amber:#D97706;
+    --bg:#F8FAFC; --card:#FFFFFF; --border:#E2E8F0; --text:#1E293B; --muted:#64748B;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);}
+  .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;}
+  header{background:var(--navy);color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:10;}
+  .headrow{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;}
+  .eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#94A3B8;font-weight:700;}
+  h1{font-size:18px;margin:2px 0 0;font-weight:800;letter-spacing:-0.01em;}
+  .tabs{display:flex;gap:4px;overflow-x:auto;}
+  .tab{background:none;border:none;color:#94A3B8;font-weight:700;font-size:13px;padding:10px 14px;border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;}
+  .tab.active{color:#fff;border-color:var(--amber);}
+  main{max-width:640px;margin:0 auto;padding:16px;padding-bottom:60px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px;}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+  label{display:block;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;}
+  input,select,textarea{width:100%;padding:9px 10px;border:1px solid #CBD5E1;border-radius:6px;font-size:14px;color:var(--text);background:#fff;}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--steel);border-color:var(--steel);}
+  .chkrow{display:flex;gap:16px;align-items:center;padding-top:6px;font-size:14px;}
+  .btn{border:none;border-radius:6px;font-weight:700;font-size:14px;padding:11px 16px;cursor:pointer;}
+  .btn-primary{background:var(--navy);color:#fff;width:100%;}
+  .btn-primary:disabled{opacity:.5;}
+  .btn-teal{background:var(--teal);color:#fff;}
+  .btn-rose{background:var(--rose);color:#fff;}
+  .btn-outline{background:#fff;border:1px solid #CBD5E1;color:var(--muted);}
+  .pillrow{display:flex;gap:8px;margin-top:4px;}
+  .pill{border:1px solid #CBD5E1;background:#fff;color:var(--muted);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+  .pill.on-ok{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .pill.on-bad{background:var(--rose);border-color:var(--rose);color:#fff;}
+  .timerbox{background:#F1F5F9;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px;}
+  .timerhead{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .elapsed{font-weight:800;color:var(--amber);}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .kpi .label{font-size:10px;font-weight:800;text-transform:uppercase;color:var(--muted);}
+  .kpi .value{font-size:20px;font-weight:800;margin-top:2px;}
+  .sectionlabel{font-size:12px;font-weight:800;text-transform:uppercase;color:var(--muted);margin:18px 0 8px;}
+  .listcard{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #F1F5F9;font-size:13px;gap:8px;}
+  .item:last-child{border-bottom:none;}
+  .item .sub{color:var(--muted);font-size:11px;}
+  .badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;}
+  .badge.ok{background:#F0FDFA;color:#0F766E;border:1px solid #99F6E4;}
+  .badge.bad{background:#FFF1F2;color:#BE123C;border:1px solid #FECDD3;}
+  .dot{width:6px;height:6px;border-radius:50%;}
+  .dot.ok{background:#0D9488;} .dot.bad{background:#E11D48;}
+  .empty{padding:24px;text-align:center;color:var(--muted);font-size:13px;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:50;}
+  .idbar{background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;font-size:12px;padding:10px 14px;border-radius:8px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .idbar input{width:auto;flex:1;min-width:120px;padding:6px 8px;font-size:12px;}
+  .footer-note{font-size:11px;color:var(--muted);text-align:center;margin-top:20px;}
+  @media (max-width:420px){ .row{grid-template-columns:1fr;} .kpis{grid-template-columns:1fr 1fr;} }
+</style>
+</head>
+<body>
+<header>
+  <div class="headrow">
+    <div>
+      <div class="eyebrow">Metalúrgica Vera · SGC</div>
+      <h1>Control de Calidad Digital</h1>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="fr051">Ensayo (FR-051)</button>
+    <button class="tab" data-tab="fr032">No Conformidad (FR-032)</button>
+    <button class="tab" data-tab="panel">Panel</button>
+  </div>
+</header>
+
+<main>
+  <div class="idbar">
+    👤 Registrando como:
+    <input id="inspectorName" placeholder="Tu nombre" />
+  </div>
+
+  <!-- FR-051 -->
+  <section id="view-fr051">
+    <form class="card" id="form051">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <strong>Nueva inspección de soldadura</strong>
+        <span class="mono" style="font-size:11px;color:var(--muted);">PR-013 / FR-051</span>
+      </div>
+      <div class="row">
+        <div><label>Fecha</label><input type="date" name="fecha" required></div>
+        <div><label>OT N°</label><input class="mono" name="ot" required></div>
+        <div><label>Obra</label><input name="obra"></div>
+        <div><label>Sector</label>
+          <select name="sector">
+            <option>Armado 1</option><option>Armado 2</option><option>Armado 3</option>
+            <option>Herrería</option><option>Maquinado</option><option>Otro</option>
+          </select>
+        </div>
+        <div><label>Pieza / Código</label><input class="mono" name="pieza" required></div>
+        <div><label>Soldador (estampa)</label><input class="mono" name="soldador"></div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Tipo de ensayo</label>
+          <div class="chkrow">
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;text-transform:none;font-size:13px;"><input type="checkbox" name="vt" checked style="width:auto;"> VT</label>
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;text-transform:none;font-size:13px;"><input type="checkbox" name="pt" style="width:auto;"> PT</label>
+          </div>
+        </div>
+        <div><label>Muestra (%)</label><input type="number" min="0" max="100" name="muestra"></div>
+      </div>
+
+      <div class="timerbox">
+        <div class="timerhead"><span>⏱ Tiempo de inspección</span><span class="elapsed mono" id="elapsedDisplay"></span></div>
+        <div class="row" style="margin-bottom:10px;">
+          <div><label>Hora inicio</label><input class="mono" name="horaInicio" id="horaInicio" placeholder="--:--"></div>
+          <div><label>Hora fin</label><input class="mono" name="horaFin" id="horaFin" placeholder="--:--"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn btn-teal" id="btnStart">▶ Iniciar ahora</button>
+          <button type="button" class="btn btn-rose" id="btnStop">■ Finalizar ahora</button>
+        </div>
+      </div>
+
+      <label>Resultado</label>
+      <div class="pillrow" style="margin-bottom:14px;">
+        <button type="button" class="pill on-ok" data-res="Aprobado">Aprobado</button>
+        <button type="button" class="pill" data-res="Rechazado">Rechazado</button>
+      </div>
+      <input type="hidden" name="resultado" value="Aprobado">
+
+      <label>Observaciones</label>
+      <textarea name="observaciones" rows="2" style="margin-bottom:14px;"></textarea>
+
+      <button type="submit" class="btn btn-primary">Guardar inspección</button>
+    </form>
+  </section>
+
+  <!-- FR-032 -->
+  <section id="view-fr032" style="display:none;">
+    <form class="card" id="form032">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <strong>Nueva No Conformidad</strong>
+        <span class="mono" style="font-size:11px;color:var(--muted);">PR-001 / FR-032</span>
+      </div>
+      <div class="row">
+        <div><label>Tipo</label>
+          <select name="tipo"><option>A - Producción</option><option>B - Recepción de materiales</option></select>
+        </div>
+        <div><label>Fecha</label><input type="date" name="fecha" required></div>
+        <div><label>OT N°</label><input class="mono" name="ot" required></div>
+        <div><label>Sector / Área</label>
+          <select name="area">
+            <option>Armado 1</option><option>Armado 2</option><option>Armado 3</option>
+            <option>Herrería</option><option>Maquinado</option><option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <label>Descripción</label>
+      <textarea name="descripcion" rows="3" required style="margin-bottom:14px;"></textarea>
+
+      <label>Foto / evidencia</label>
+      <input type="file" id="evidenciaInput" accept="image/*" capture="environment" multiple style="margin-bottom:8px;">
+      <div id="evidenciaPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"></div>
+
+      <div class="row">
+        <div><label>Disposición</label>
+          <select name="disposicion"><option>Rechazar</option><option>Aceptar</option></select>
+        </div>
+        <div><label>Costo estimado (Gs)</label><input class="mono" type="number" min="0" name="costo"></div>
+        <div><label>Estado</label>
+          <select name="estado"><option>Abierta</option><option>Cerrada</option></select>
+        </div>
+        <div><label>Responsable</label><input name="responsable" required></div>
+      </div>
+      <button type="submit" class="btn btn-primary">Registrar no conformidad</button>
+    </form>
+  </section>
+
+  <!-- PANEL -->
+  <section id="view-panel" style="display:none;">
+    <div class="kpis">
+      <div class="kpi"><div class="label">Inspecciones (mes)</div><div class="value mono" id="kpiInsp">-</div></div>
+      <div class="kpi"><div class="label">% Aprobado</div><div class="value mono" id="kpiPct">-</div></div>
+      <div class="kpi"><div class="label">Tiempo prom. insp.</div><div class="value mono" id="kpiTime">-</div></div>
+      <div class="kpi"><div class="label">Costo NC (mes)</div><div class="value mono" id="kpiCosto">-</div></div>
+    </div>
+    <button class="btn btn-outline" id="btnRefresh" style="margin-bottom:10px;">↻ Actualizar</button>
+    <div class="sectionlabel">Últimas inspecciones</div>
+    <div class="listcard" id="listFr051"><div class="empty">Cargando…</div></div>
+    <div class="sectionlabel">Últimas no conformidades</div>
+    <div class="listcard" id="listFr032"><div class="empty">Cargando…</div></div>
+    <div class="footer-note">Cada registro es permanente y numerado correlativamente. Las correcciones generan una revisión nueva; el historial completo queda disponible para auditoría.</div>
+  </section>
+</main>
+
+<div id="toast" class="toast" style="display:none;"></div>
+
+<script>
+/* ======= CONFIGURACIÓN ======= */
+/* Reemplazar por la URL de implementación del Apps Script (termina en /exec) */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxe6Gv9Fi94E03VBBfLqo9GvnmIk4A8tkAtBasan00ekLaNjaEcnY06H7qV4STuT_ng/exec";
+
+/* ======= Utilidades ======= */
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function nowHM(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function minutesBetween(a,b){
+  if(!a||!b) return null;
+  const [sh,sm]=a.split(':').map(Number), [eh,em]=b.split(':').map(Number);
+  let diff=(eh*60+em)-(sh*60+sm); if(diff<0) diff+=24*60; return diff;
+}
+function fmtGs(n){ if(n===null||n===undefined||n==='') return '-'; return 'Gs ' + Number(n).toLocaleString('es-PY'); }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none', 2500); }
+function monthKey(d){ return (d||'').toString().slice(0,7); }
+
+/* ======= Inspector (persistido localmente en el dispositivo) ======= */
+const inspectorInput = document.getElementById('inspectorName');
+inspectorInput.value = localStorage.getItem('mv_inspector_name') || '';
+inspectorInput.addEventListener('change', () => localStorage.setItem('mv_inspector_name', inspectorInput.value));
+
+/* ======= Tabs ======= */
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    ['fr051','fr032','panel'].forEach(id=>{
+      document.getElementById('view-'+id).style.display = (id===btn.dataset.tab)?'block':'none';
+    });
+    if(btn.dataset.tab==='panel') loadPanel();
+  });
+});
+
+/* ======= Timer FR-051 ======= */
+let timerInterval=null, startedAt=null;
+document.getElementById('btnStart').addEventListener('click', ()=>{
+  document.getElementById('horaInicio').value = nowHM();
+  startedAt = Date.now();
+  timerInterval = setInterval(()=>{
+    const el = Date.now()-startedAt;
+    const m = Math.floor(el/60000), s = Math.floor((el%60000)/1000);
+    document.getElementById('elapsedDisplay').textContent = m+'m '+s+'s';
+  },1000);
+});
+document.getElementById('btnStop').addEventListener('click', ()=>{
+  document.getElementById('horaFin').value = nowHM();
+  clearInterval(timerInterval);
+  document.getElementById('elapsedDisplay').textContent='';
+  startedAt=null;
+});
+
+/* ======= Resultado pills ======= */
+document.querySelectorAll('#form051 .pill').forEach(p=>{
+  p.addEventListener('click', ()=>{
+    document.querySelectorAll('#form051 .pill').forEach(x=>x.classList.remove('on-ok','on-bad'));
+    const ok = p.dataset.res==='Aprobado';
+    p.classList.add(ok?'on-ok':'on-bad');
+    document.querySelector('#form051 input[name=resultado]').value = p.dataset.res;
+  });
+});
+
+/* ======= Defaults de fecha ======= */
+document.querySelector('#form051 input[name=fecha]').value = todayISO();
+document.querySelector('#form032 input[name=fecha]').value = todayISO();
+
+/* ======= Envío al backend ======= */
+async function postAction(payload){
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'}, // evita preflight CORS con Apps Script
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+document.getElementById('form051').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const f = e.target;
+  const inspector = inspectorInput.value.trim();
+  if(!inspector){ showToast('Ingresá tu nombre arriba antes de guardar.'); return; }
+  const data = {
+    fecha: f.fecha.value, ot: f.ot.value, obra: f.obra.value, sector: f.sector.value,
+    pieza: f.pieza.value, soldador: f.soldador.value, tipoEstructura: '',
+    vt: f.vt.checked, pt: f.pt.checked, muestra: f.muestra.value,
+    horaInicio: f.horaInicio.value, horaFin: f.horaFin.value,
+    duracionMin: minutesBetween(f.horaInicio.value, f.horaFin.value),
+    resultado: f.resultado.value, observaciones: f.observaciones.value, inspector
+  };
+  const btn = f.querySelector('button[type=submit]');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try{
+    const r = await postAction({ action:'crear_fr051', usuario: inspector, data });
+    if(r.ok){ showToast('Inspección guardada — '+r.id); f.reset(); f.fecha.value = todayISO(); document.getElementById('elapsedDisplay').textContent=''; }
+    else showToast('Error: '+(r.error||'desconocido'));
+  }catch(err){ showToast('No se pudo conectar con el servidor.'); }
+  btn.disabled = false; btn.textContent = 'Guardar inspección';
+});
+
+/* ======= Evidencia fotográfica (FR-032) ======= */
+let evidenciaFiles = []; // [{filename, mimeType, base64}]
+
+function compressImage(file, maxDim=1280, quality=0.72){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim){
+          const scale = maxDim / Math.max(w,h);
+          w = Math.round(w*scale); h = Math.round(h*scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve({ dataUrl, base64: dataUrl.split(',')[1] });
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('evidenciaInput').addEventListener('change', async (e)=>{
+  const preview = document.getElementById('evidenciaPreview');
+  for (const file of e.target.files){
+    try{
+      const { dataUrl, base64 } = await compressImage(file);
+      evidenciaFiles.push({ filename: file.name.replace(/\.[^.]+$/, '') + '.jpg', mimeType: 'image/jpeg', base64 });
+      const idx = evidenciaFiles.length - 1;
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;width:64px;height:64px;';
+      wrap.innerHTML = `<img src="${dataUrl}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #CBD5E1;">
+        <button type="button" data-idx="${idx}" style="position:absolute;top:-6px;right:-6px;background:var(--rose);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;">×</button>`;
+      wrap.querySelector('button').addEventListener('click', (ev)=>{
+        const i = Number(ev.target.dataset.idx);
+        evidenciaFiles[i] = null; // se filtra al enviar
+        wrap.remove();
+      });
+      preview.appendChild(wrap);
+    }catch(err){ showToast('No se pudo procesar una imagen.'); }
+  }
+  e.target.value = ''; // permite volver a elegir la misma foto si hace falta
+});
+
+document.getElementById('form032').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const f = e.target;
+  const inspector = inspectorInput.value.trim();
+  if(!inspector){ showToast('Ingresá tu nombre arriba antes de guardar.'); return; }
+  const data = {
+    tipo: f.tipo.value, fecha: f.fecha.value, ot: f.ot.value, area: f.area.value,
+    descripcion: f.descripcion.value, disposicion: f.disposicion.value,
+    costo: f.costo.value, estado: f.estado.value, responsable: f.responsable.value,
+    evidencias: evidenciaFiles.filter(Boolean)
+  };
+  const btn = f.querySelector('button[type=submit]');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try{
+    const r = await postAction({ action:'crear_fr032', usuario: inspector, data });
+    if(r.ok){
+      showToast('No conformidad registrada — '+r.id);
+      f.reset(); f.fecha.value = todayISO();
+      evidenciaFiles = []; document.getElementById('evidenciaPreview').innerHTML = '';
+    }
+    else showToast('Error: '+(r.error||'desconocido'));
+  }catch(err){ showToast('No se pudo conectar con el servidor.'); }
+  btn.disabled = false; btn.textContent = 'Registrar no conformidad';
+});
+
+/* ======= Panel ======= */
+document.getElementById('btnRefresh').addEventListener('click', loadPanel);
+
+async function loadPanel(){
+  document.getElementById('listFr051').innerHTML = '<div class="empty">Cargando…</div>';
+  document.getElementById('listFr032').innerHTML = '<div class="empty">Cargando…</div>';
+  try{
+    const [r051, r032] = await Promise.all([
+      fetch(APPS_SCRIPT_URL+'?action=list&form=fr051').then(r=>r.json()),
+      fetch(APPS_SCRIPT_URL+'?action=list&form=fr032').then(r=>r.json())
+    ]);
+    renderPanel(r051.records||[], r032.records||[]);
+  }catch(err){
+    document.getElementById('listFr051').innerHTML = '<div class="empty">No se pudo conectar con el servidor.</div>';
+    document.getElementById('listFr032').innerHTML = '';
+  }
+}
+
+function renderPanel(fr051, fr032){
+  const tm = monthKey(todayISO());
+  const fr051Mes = fr051.filter(r=>monthKey(r.Fecha)===tm);
+  const fr032Mes = fr032.filter(r=>monthKey(r.Fecha)===tm);
+  const aprobadas = fr051Mes.filter(r=>r.Resultado==='Aprobado').length;
+  const pct = fr051Mes.length ? Math.round(aprobadas/fr051Mes.length*100)+'%' : '-';
+  const tiempos = fr051Mes.map(r=>r.DuracionMin).filter(v=>v!==''&&v!=null);
+  const tprom = tiempos.length ? Math.round(tiempos.reduce((a,b)=>a+Number(b),0)/tiempos.length)+' min' : '-';
+  const costoNC = fr032Mes.reduce((s,r)=>s+(Number(r.Costo)||0),0);
+
+  document.getElementById('kpiInsp').textContent = fr051Mes.length;
+  document.getElementById('kpiPct').textContent = pct;
+  document.getElementById('kpiTime').textContent = tprom;
+  document.getElementById('kpiCosto').textContent = fmtGs(costoNC);
+
+  const l051 = document.getElementById('listFr051');
+  l051.innerHTML = fr051.length ? '' : '<div class="empty">Sin registros todavía.</div>';
+  fr051.slice(0,8).forEach(r=>{
+    const ok = r.Resultado==='Aprobado';
+    const dur = (r.DuracionMin!==''&&r.DuracionMin!=null) ? r.DuracionMin+' min' : '';
+    l051.insertAdjacentHTML('beforeend', `
+      <div class="item">
+        <div><span class="mono" style="font-weight:700;">${r.Pieza||''}</span>
+          <div class="sub"><span class="mono" style="color:#94A3B8;">${r.ID_Registro||''}${r.Revision>1?(' · Rev.'+r.Revision):''}</span> · OT ${r.OT||''} · ${r.Sector||''} · ${r.Fecha||''}</div></div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="mono" style="color:var(--muted);font-size:11px;">${dur}</span>
+          <span class="badge ${ok?'ok':'bad'}"><span class="dot ${ok?'ok':'bad'}"></span>${ok?'Aprobado':'Rechazado'}</span>
+        </div>
+      </div>`);
+  });
+
+  const l032 = document.getElementById('listFr032');
+  l032.innerHTML = fr032.length ? '' : '<div class="empty">Sin registros todavía.</div>';
+  fr032.slice(0,8).forEach(r=>{
+    const cerrada = r.Estado==='Cerrada';
+    const urls = (r.Evidencia_URLs||'').split('|').map(u=>u.trim()).filter(Boolean);
+    const evidenciaTag = urls.length
+      ? `<a href="${urls[0]}" target="_blank" rel="noopener" style="text-decoration:none;color:var(--steel);font-size:11px;font-weight:700;">📎 ${urls.length}</a>`
+      : '';
+    l032.insertAdjacentHTML('beforeend', `
+      <div class="item">
+        <div><span class="mono" style="font-weight:700;">${r.ID_Registro||''}</span>${r.Revision>1?(' <span class="mono" style="color:#94A3B8;font-size:11px;">Rev.'+r.Revision+'</span>'):''}
+          <div class="sub">OT ${r.OT||''} · ${r.Area||''} · ${r.Fecha||''} — ${(r.Descripcion||'').slice(0,50)}</div></div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${evidenciaTag}
+          <span class="mono" style="color:var(--muted);font-size:11px;">${fmtGs(r.Costo)}</span>
+          <span class="badge ${cerrada?'ok':'bad'}"><span class="dot ${cerrada?'ok':'bad'}"></span>${cerrada?'Cerrada':'Abierta'}</span>
+        </div>
+      </div>`);
+  });
+}
+
+/* ======= Registro del Service Worker (instalable como app) ======= */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+}
+</script>
+</body>
+</html>
